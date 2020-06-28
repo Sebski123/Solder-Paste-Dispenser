@@ -15,6 +15,10 @@
  *                 configurations of the stepper motor
  */
 
+#include <Stepper.h>
+
+const int stepsPerRevolution = 2048;
+
 // Connections between Attiny85 and ULN2003A
 #define in1 0
 #define in2 1
@@ -22,88 +26,38 @@
 #define in4 3
 
 #define forwardStp   2       // Number of steps per button press
-#define idleBkStp   20      
+#define idleBkStp   200      
 
-#define del 2
+Stepper myStepper = Stepper(stepsPerRevolution, in2, in4, in1, in3);
 
 long t = 0;
 bool backed = false;
 
 void setup() {
-  pinMode(in1, OUTPUT);
-  pinMode(in2, OUTPUT);
-  pinMode(in3, OUTPUT);
-  pinMode(in4, OUTPUT);
   pinMode(4, INPUT);
-  backward(5);
-  motor_steps(4);           // Stepper off
+  myStepper.setSpeed(1); 
+  myStepper.step(5);
+  motor_stop();           // Stepper off
+  
 }
 
 void loop() {
   if(digitalRead(4) == HIGH){
-    forward(forwardStp);
+    myStepper.step(forwardStp);
     t = millis();
     backed = false;
-    delay(500);                 // Reaction delay
   }
   if((millis() - t) > 10000 && backed == false){     // release the inside pressure after 10s of idle
-    backward(idleBkStp);
-    motor_steps(4);             // Stepper off
+    myStepper.step(-idleBkStp);
+    motor_stop();
     backed = true;
   }
 }
 
-void motor_steps(int i) {       // Full stepping
-  if (i == 0) {
-    digitalWrite(in1, HIGH);
-    digitalWrite(in2, HIGH);
-    digitalWrite(in3, LOW);
-    digitalWrite(in4, LOW);
-    delay(del);
-  } 
-  else if (i == 1) {
-    digitalWrite(in1, LOW);
-    digitalWrite(in2, HIGH);
-    digitalWrite(in3, HIGH);
-    digitalWrite(in4, LOW);
-    delay(del);
-  }
-  else if (i == 2) {
-    digitalWrite(in1, LOW);
-    digitalWrite(in2, LOW);
-    digitalWrite(in3, HIGH);
-    digitalWrite(in4, HIGH);
-    delay(del);
-  } 
-  else if (i == 3) {
-    digitalWrite(in1, HIGH);
-    digitalWrite(in2, LOW);
-    digitalWrite(in3, LOW);
-    digitalWrite(in4, HIGH);
-    delay(del);
-  }
-  else if (i == 4) {      // stepper off
-    digitalWrite(in1, LOW);
-    digitalWrite(in2, LOW);
-    digitalWrite(in3, LOW);
-    digitalWrite(in4, LOW);
-  }
-}
-
-void backward(int count) {
-  for (int c = 0; c < count; c++) {
-    motor_steps(0);
-    motor_steps(1);
-    motor_steps(2);
-    motor_steps(3);
-  }
-}
-
-void forward(int count) {
-  for (int c = 0; c < count; c++) {
-    motor_steps(3);
-    motor_steps(2);
-    motor_steps(1);
-    motor_steps(0);
-  }
+void motor_stop() {
+  // stepper off
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, LOW);
 }
